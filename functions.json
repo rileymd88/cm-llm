@@ -1,0 +1,16 @@
+{
+    "Functions" : [
+        {
+            "Id" : 0,
+            "Name" : "LLM",
+            "Type" : 0,
+            "ReturnType": 0,
+            "Params" : {
+                "model" : 0,
+                "prompt" : 0,
+                "data" : 0,
+                "columns" : 0
+                }
+        }
+    ]
+}
