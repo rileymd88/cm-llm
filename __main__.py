@@ -375,7 +375,7 @@ class ExtensionService(SSE.ConnectorServicer):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--port", nargs="?", default="50055")
+    parser.add_argument("--port", nargs="?", default=os.getenv("PORT"))
     parser.add_argument("--pem_dir", nargs="?")
     parser.add_argument("--definition_file", nargs="?", default="functions.json")
     args = parser.parse_args()
