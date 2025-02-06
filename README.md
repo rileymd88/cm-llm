@@ -14,6 +14,13 @@ Install requirements:
 pip install -r requirements.txt
 ```
 
+Create a .env file in the root directory with the following contents:
+```
+OPENAI_API_KEY=YOUR_OPENAI_API_KEY
+PORT=50055
+```
+Replace YOUR_OPENAI_API_KEY with your actual OpenAI API key. The PORT can be modified if needed.
+
 Start the server:
 ```bash
 python __main__.py
