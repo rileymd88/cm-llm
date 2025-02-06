@@ -1,16 +1,27 @@
 {
-    "Functions" : [
+    "Functions": [
         {
-            "Id" : 0,
-            "Name" : "LLM",
-            "Type" : 0,
+            "Id": 0,
+            "Name": "LLM",
+            "Type": 0,
             "ReturnType": 0,
-            "Params" : {
-                "model" : 0,
-                "prompt" : 0,
-                "data" : 0,
-                "columns" : 0
-                }
+            "Params": {
+                "columns": 0,
+                "data": 0,
+                "model": 0,
+                "prompt": 0
+            }
+        },
+        {
+            "Id": 1,
+            "Name": "GetTokens",
+            "Type": 0,
+            "ReturnType": 1,
+            "Params": {
+                "columns": 0,
+                "data": 0,
+                "model": 0
+            }
         }
     ]
 }
