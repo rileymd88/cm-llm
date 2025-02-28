@@ -65,6 +65,23 @@ Calculate token count for given data and model.
 - `model`: Model name as defined in models.json  
   Example: `"gpt-4"`
 
+### AnalyticConnectionName.LLMStructured
+Parse data into a structured format using an LLM.
+
+**Parameters:**
+- `data`: String data to be parsed into structured format
+- `functionDefinition`: Schema definition in format "name|description|type,name2|description2|type2"  
+  Example: `"product|product name|string,price|product price|number,available|stock status|boolean"`
+- `model`: Model name as defined in models.json  
+  Example: `"gpt-4"`
+- `return_type`: Output format ("json" or "string"). json should be used when passing an entire table in the load script.   
+  Example: `"json"`
+
+**Notes:**
+- Valid types for schema fields include: string, number, integer, boolean, object, array, null
+- When return_type is "json", the function returns multiple columns corresponding to each defined field. Only use this when passing an entire table in the load script.
+- For the string return type, the function returns the entire JSON response as a string. You can use the JSONGet() to extract the data you need.
+
 
 
     

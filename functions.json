@@ -22,6 +22,18 @@
                 "data": 0,
                 "model": 0
             }
+        },
+        {
+            "Id": 2,
+            "Name": "LLMStructured",
+            "Type": 0,
+            "ReturnType": 0,
+            "Params": {
+                "data": 0,
+                "functionDefinition": 0,
+                "model": 0,
+                "returnType": 0
+            }
         }
     ]
 }

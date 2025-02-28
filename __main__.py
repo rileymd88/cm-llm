@@ -73,6 +73,43 @@ def get_csv_string(columns, data_rows):
         csv_rows.append(csv_row)
     return csv_columns + '\n' + '\n'.join(csv_rows)
 
+def generate_schema(input_str):
+    valid_types = {"string", "number", "integer", "boolean", "object", "array", "null"}
+    properties = {}
+    required = []
+    
+    # Split the string by commas to separate fields
+    for field in input_str.split(','):
+        parts = field.split('|')
+        if len(parts) != 3:
+            raise ValueError(f"Field '{field}' must be in the format name|description|type")
+        name, description, field_type = parts
+        if field_type not in valid_types:
+            raise ValueError(f"Invalid type provided: {field_type}. Valid types are: {', '.join(valid_types)}")
+        properties[name] = {
+            "type": field_type,
+            "description": description
+        }
+        required.append(name)
+    
+    schema = [{
+        "type": "function",
+        "function": {
+            "name": "parse_data",
+            "description": "Parse the data into a structured format",
+            "parameters": {
+                "type": "object",
+                "properties": properties,
+                "required": required,
+                "additionalProperties": False
+            },
+            "strict": True
+        }
+    }]
+    
+    # Return both the schema and the list of keys
+    return schema, required
+
 class ExtensionService(SSE.ConnectorServicer):
     """
     A simple SSE-plugin created for the HelloWorld example.
@@ -106,7 +143,7 @@ class ExtensionService(SSE.ConnectorServicer):
         """
         :return: Mapping of function id and implementation
         """
-        return {0: "_llm", 1: "_get_tokens"}
+        return {0: "_llm", 1: "_get_tokens", 2: "_llm_structured"}
 
     @staticmethod
     def _get_function_id(context):
@@ -184,11 +221,9 @@ class ExtensionService(SSE.ConnectorServicer):
         global models
         global valid_models
         global llm_client
-        global get_tokens
         
         # Initialize variables to store data
         columns = None
-        data = None
         model = None
         prompt = None
         data_rows = []
@@ -200,7 +235,6 @@ class ExtensionService(SSE.ConnectorServicer):
                 first_row = request_bundle.rows[0]
                 # Update order to match functions.json: columns, data, model, prompt
                 columns = first_row.duals[0].strData
-                data = first_row.duals[1].strData
                 model = first_row.duals[2].strData
                 prompt = first_row.duals[3].strData
 
@@ -236,6 +270,70 @@ class ExtensionService(SSE.ConnectorServicer):
 
         # Yield the row data as bundled rows
         yield SSE.BundledRows(rows=[SSE.Row(duals=duals)])
+        
+    @staticmethod
+    def _llm_structured(request, context):
+        global models
+        global valid_models
+        global llm_client
+        global generate_schema
+        # Initialize variables to store data
+        function_definition = None
+        model = None
+        keys = []
+        return_type = None
+        data_rows = []
+
+        # Process each bundle
+        for request_bundle in request:
+            # Get first row data if not already set
+            if model is None:
+                first_row = request_bundle.rows[0]
+                # Update order to match functions.json: data, functionDefinition, model
+                function_definition = first_row.duals[1].strData
+                return_type = first_row.duals[3].strData
+                tools, keys = generate_schema(function_definition)
+                model = first_row.duals[2].strData
+
+            # Collect all data rows
+            for row in request_bundle.rows:
+                data_rows.append(row.duals[0].strData)
+        
+        # make call to LLM
+        completion = llm_client.chat.completions.create(
+            model=model,
+            messages=[
+                {"role": "developer", "content": "You are a helpful assistant. Which should answer questions about the data you received"},
+                {
+                    "role": "user",
+                    "content": f"Parse the the following into a structured format.\n\n{data_rows}",
+                },
+            ],
+            tools=tools,
+        )
+        tool_response = completion.choices[0].message.tool_calls[0].function.arguments
+        print(f"Tool response: {tool_response}")
+        
+        if return_type == "json":
+            # Parse the JSON response
+            parsed_response = json.loads(tool_response)
+            print(f"Parsed response: {parsed_response}")
+            
+            # Create a row with multiple columns, one for each key in the JSON
+            duals = []
+            for key in keys:
+                value = parsed_response.get(key, "")
+                # Always convert to string and use strData
+                str_value = str(value)
+                print(f"Key: {key}, Value: {value}, Using as string: {str_value}")
+                duals.append(SSE.Dual(strData=str_value))
+            
+            # Yield the row data as bundled rows
+            yield SSE.BundledRows(rows=[SSE.Row(duals=duals)])
+        else:
+            duals = [SSE.Dual(strData=tool_response)]
+            # Yield the row data as bundled rows
+            yield SSE.BundledRows(rows=[SSE.Row(duals=duals)])
 
     """
     Implementation of rpc functions.
